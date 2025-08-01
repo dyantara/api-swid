@@ -12,9 +12,11 @@ on:
   pull_request:
     branches:
       - main
+      - dev
 
 jobs:
   lint-test:
+    name: Run Linter & Unit Test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -28,21 +30,22 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Run Lint
+      - name: Run Linter
         run: npm run lint || echo "No lint"
 
       - name: Run Tests
         run: npm test || echo "No test"
 
   deploy-preview:
+    name: Deploy Preview to Vercel (PR)
     needs: lint-test
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Deploy Preview to Vercel (PR to main)
+      - name: Deploy Preview to Vercel
         uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
@@ -52,14 +55,15 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
   deploy-production:
+    name: Deploy Production to Vercel (main)
     needs: lint-test
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Deploy Production to Vercel (main)
+      - name: Deploy to Vercel (Production)
         uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
