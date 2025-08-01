@@ -17,6 +17,10 @@ const storySchema = new mongoose.Schema(
             ref: "Category",
             required: [true, "Kategori cerita wajib dipilih."],
         },
+        image: {
+            type: String,
+            required: [true, "Gambar cerita wajib diunggah."],
+        },
         status: {
             type: String,
             enum: ["pending", "approved", "rejected"],
@@ -33,7 +37,6 @@ const storySchema = new mongoose.Schema(
         },
         email: {
             type: String,
-            default: null,
             validate: {
                 validator: function (v) {
                     // validasi format email kalau ada isinya
@@ -45,7 +48,6 @@ const storySchema = new mongoose.Schema(
         submittedBy: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
-            default: null,
         },
     },
     { timestamps: true }
