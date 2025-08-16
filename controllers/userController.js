@@ -2,38 +2,35 @@ const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
+// REGISTER
 exports.register = async (req, res, next) => {
     try {
         const { name, email, password, confirmPassword } = req.body;
 
-        // Validasi basic
         if (!name || !email || !password || !confirmPassword) {
-            return next({ statusCode: 400, message: "Semua field wajib diisi" });
+            return res.status(400).json({ success: false, message: "Semua field wajib diisi" });
         }
 
-        // Validasi panjang password
         if (password.length < 6) {
-            return next({ statusCode: 400, message: "Password minimal 6 karakter" });
+            return res.status(400).json({ success: false, message: "Password minimal 6 karakter" });
         }
 
-        // Validasi password dan confirm
         if (password !== confirmPassword) {
-            return next({ statusCode: 400, message: "Password dan konfirmasi tidak cocok" });
+            return res
+                .status(400)
+                .json({ success: false, message: "Password dan konfirmasi tidak cocok" });
         }
 
-        // Validasi email
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
-            return next({ statusCode: 400, message: "Format email tidak valid" });
+            return res.status(400).json({ success: false, message: "Format email tidak valid" });
         }
 
-        // Cek email sudah terdaftar
         const existingUser = await User.findOne({ email });
         if (existingUser) {
-            return next({ statusCode: 400, message: "Email sudah terdaftar" });
+            return res.status(400).json({ success: false, message: "Email sudah terdaftar" });
         }
 
-        // Simpan user
         const hashedPassword = await bcrypt.hash(password, 10);
         const user = new User({ name, email, password: hashedPassword });
         const savedUser = await user.save();
@@ -41,7 +38,7 @@ exports.register = async (req, res, next) => {
         res.status(201).json({
             success: true,
             message: "Registrasi berhasil",
-            user: {
+            data: {
                 _id: savedUser._id,
                 name: savedUser.name,
                 email: savedUser.email,
@@ -50,26 +47,28 @@ exports.register = async (req, res, next) => {
         });
     } catch (err) {
         console.error("[Register Error]", err);
-        return next({ statusCode: 500, message: "Gagal registrasi" });
+        res.status(500).json({ success: false, message: "Gagal registrasi", error: err.message });
     }
 };
 
+// LOGIN
 exports.login = async (req, res, next) => {
     try {
         const { email, password } = req.body;
-
         if (!email || !password) {
-            return next({ statusCode: 400, message: "Email dan password wajib diisi" });
+            return res
+                .status(400)
+                .json({ success: false, message: "Email dan password wajib diisi" });
         }
 
         const user = await User.findOne({ email });
         if (!user) {
-            return next({ statusCode: 404, message: "User tidak ditemukan" });
+            return res.status(404).json({ success: false, message: "User tidak ditemukan" });
         }
 
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
-            return next({ statusCode: 400, message: "Password salah" });
+            return res.status(400).json({ success: false, message: "Password salah" });
         }
 
         user.lastLogin = new Date();
@@ -83,7 +82,7 @@ exports.login = async (req, res, next) => {
             success: true,
             message: "Login berhasil",
             token,
-            user: {
+            data: {
                 _id: user._id,
                 name: user.name,
                 email: user.email,
@@ -92,24 +91,131 @@ exports.login = async (req, res, next) => {
         });
     } catch (err) {
         console.error("[Login Error]", err);
-        return next({ statusCode: 500, message: "Gagal login" });
+        res.status(500).json({ success: false, message: "Gagal login", error: err.message });
     }
 };
 
-exports.getProfile = async (req, res, next) => {
+// GET PROFILE
+exports.getProfile = async (req, res) => {
     try {
         const user = await User.findById(req.user.userId).select("-password");
         if (!user) {
-            return next({ statusCode: 404, message: "User tidak ditemukan" });
+            return res.status(404).json({ success: false, message: "User tidak ditemukan" });
         }
 
         res.json({
             success: true,
             message: "Profil berhasil diambil",
-            user,
+            data: user,
         });
     } catch (err) {
         console.error("[Get Profile Error]", err);
-        return next({ statusCode: 500, message: "Gagal mengambil profil" });
+        res.status(500).json({
+            success: false,
+            message: "Gagal mengambil profil",
+            error: err.message,
+        });
+    }
+};
+
+// UPDATE PROFILE
+exports.updateProfile = async (req, res) => {
+    try {
+        const { name, bio, avatar } = req.body;
+        const updatedUser = await User.findByIdAndUpdate(
+            req.user.userId,
+            { name, bio, avatar },
+            { new: true }
+        ).select("-password");
+
+        if (!updatedUser) {
+            return res.status(404).json({ success: false, message: "User tidak ditemukan" });
+        }
+
+        res.json({
+            success: true,
+            message: "Profil berhasil diperbarui",
+            data: updatedUser,
+        });
+    } catch (err) {
+        console.error("[Update Profile Error]", err);
+        res.status(500).json({
+            success: false,
+            message: "Gagal memperbarui profil",
+            error: err.message,
+        });
+    }
+};
+
+// UPDATE PASSWORD
+exports.updatePassword = async (req, res) => {
+    try {
+        const { oldPassword, newPassword } = req.body;
+
+        if (!oldPassword || !newPassword) {
+            return res
+                .status(400)
+                .json({ success: false, message: "Password lama dan baru wajib diisi" });
+        }
+
+        const user = await User.findById(req.user.userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User tidak ditemukan" });
+        }
+
+        const isMatch = await bcrypt.compare(oldPassword, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ success: false, message: "Password lama salah" });
+        }
+
+        user.password = await bcrypt.hash(newPassword, 10);
+        await user.save();
+
+        res.json({ success: true, message: "Password berhasil diperbarui" });
+    } catch (err) {
+        console.error("[Update Password Error]", err);
+        res.status(500).json({
+            success: false,
+            message: "Gagal memperbarui password",
+            error: err.message,
+        });
+    }
+};
+
+// DELETE ACCOUNT
+exports.deleteAccount = async (req, res) => {
+    try {
+        const user = await User.findByIdAndDelete(req.user.userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User tidak ditemukan" });
+        }
+
+        res.json({ success: true, message: "Akun berhasil dihapus" });
+    } catch (err) {
+        console.error("[Delete Account Error]", err);
+        res.status(500).json({
+            success: false,
+            message: "Gagal menghapus akun",
+            error: err.message,
+        });
+    }
+};
+
+// GET ALL USERS (khusus admin)
+exports.getAllUsers = async (req, res) => {
+    try {
+        const users = await User.find().select("-password");
+        res.json({
+            success: true,
+            message: "Daftar user berhasil diambil",
+            data: users,
+        });
+    } catch (err) {
+        console.error("[Get All Users Error]", err);
+        res.status(500).json({
+            success: false,
+            message: "Gagal mengambil daftar user",
+            error: err.message,
+        });
     }
 };
