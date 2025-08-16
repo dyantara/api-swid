@@ -8,14 +8,17 @@ const {
     deleteStory,
     getApprovedStories,
 } = require("../controllers/storyController");
+
 const authenticate = require("../middlewares/authMiddleware");
 const upload = require("../middlewares/upload");
 
+// PUBLIC
 router.get("/", getStories);
 router.get("/approved", getApprovedStories);
 router.get("/:id", getStoryById);
 
-router.post("/", upload.single("file"), createStory);
+// PRIVATE
+router.post("/", authenticate, upload.single("file"), createStory);
 router.patch("/:id/status", authenticate, updateStatus);
 router.delete("/:id", authenticate, deleteStory);
 

@@ -6,14 +6,13 @@ const routes = require("./routes");
 const connectDB = require("./config/db");
 
 dotenv.config();
-
 const app = express();
 const port = process.env.PORT || 3000;
 
 // Koneksi database
 connectDB();
 
-// Middleware
+// Middleware CORS
 app.use(
     cors({
         origin: ["https://dev-swid.vercel.app", "http://localhost:5173"],
@@ -22,27 +21,14 @@ app.use(
     })
 );
 
-app.options("*", cors()); // handle preflight
-
-app.use((req, res, next) => {
-    const allowedOrigins = ["https://dev-swid.vercel.app", "http://localhost:5173"];
-    const origin = req.headers.origin;
-    if (allowedOrigins.includes(origin)) {
-        res.header("Access-Control-Allow-Origin", origin);
-    }
-    res.header("Access-Control-Allow-Credentials", "true");
-    res.header(
-        "Access-Control-Allow-Headers",
-        "Origin, X-Requested-With, Content-Type, Accept, Authorization"
-    );
-    next();
-});
-
+// Body parser
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Routes
 app.use("/api", routes);
 
-// 404 Handler
+// 404 handler
 app.use((req, res, next) => {
     const error = new Error("Endpoint tidak ditemukan.");
     error.statusCode = 404;
