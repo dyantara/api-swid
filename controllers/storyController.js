@@ -64,7 +64,6 @@ exports.createStory = async (req, res, next) => {
             });
         }
 
-        // Simpan ke database
         const story = new Story({
             title,
             content,
@@ -73,6 +72,7 @@ exports.createStory = async (req, res, next) => {
             email,
             submittedBy,
             image: imageUrl,
+            status: "pending",
         });
 
         const saved = await story.save();
@@ -136,12 +136,12 @@ exports.getStoryById = async (req, res, next) => {
 
 exports.updateStatus = async (req, res, next) => {
     const { status } = req.body;
-    const validStatuses = ["approved", "rejected"];
+    const validStatuses = ["pending", "approved", "rejected"]; // tambahin pending
 
     if (!validStatuses.includes(status)) {
         return next({
             status: 400,
-            message: "Status tidak valid. Harus 'approved' atau 'rejected'.",
+            message: "Status tidak valid. Harus 'pending', 'approved', atau 'rejected'.",
         });
     }
 
@@ -150,7 +150,7 @@ exports.updateStatus = async (req, res, next) => {
             req.params.id,
             {
                 status,
-                approvedAt: status === "approved" ? new Date() : null,
+                approvedAt: status === "approved" ? new Date() : null, // reset kalau bukan approved
             },
             { new: true }
         );
@@ -172,6 +172,7 @@ exports.updateStatus = async (req, res, next) => {
     }
 };
 
+
 exports.deleteStory = async (req, res, next) => {
     try {
         const story = await Story.findByIdAndDelete(req.params.id);
@@ -189,5 +190,22 @@ exports.deleteStory = async (req, res, next) => {
             message: "Gagal menghapus cerita",
             error: err.message,
         });
+    }
+};
+
+// route untuk website (hanya approved)
+exports.getApprovedStories = async (req, res, next) => {
+    try {
+        const stories = await Story.find({ status: "approved" })
+            .sort({ approvedAt: -1 })
+            .populate("category", "name");
+
+        res.json({
+            message: "Cerita berhasil diambil",
+            count: stories.length,
+            data: stories,
+        });
+    } catch (err) {
+        next({ status: 500, message: "Gagal mengambil cerita", error: err.message });
     }
 };
