@@ -6,6 +6,7 @@ const {
     updateStatus,
     getStoryById,
     deleteStory,
+    getApprovedStories,
 } = require("../controllers/storyController");
 const authenticate = require("../middlewares/authMiddleware");
 const upload = require("../middlewares/upload");
