@@ -16,8 +16,11 @@ connectDB();
 // Middleware
 app.use(
     cors({
-        origin: "*",
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        origin: [
+            "https://dev-swid.vercel.app",
+            "http://localhost:5000", 
+        ],
+        methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         credentials: true,
     })
 );
