@@ -18,7 +18,7 @@ app.use(
     cors({
         origin: [
             "https://dev-swid.vercel.app",
-            "http://localhost:5000", 
+            "http://localhost:5173", 
         ],
         methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         credentials: true,
