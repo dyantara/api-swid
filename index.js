@@ -16,14 +16,28 @@ connectDB();
 // Middleware
 app.use(
     cors({
-        origin: [
-            "https://dev-swid.vercel.app",
-            "http://localhost:5173", 
-        ],
+        origin: ["https://dev-swid.vercel.app", "http://localhost:5173"],
         methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         credentials: true,
     })
 );
+
+app.options("*", cors()); // handle preflight
+
+app.use((req, res, next) => {
+    const allowedOrigins = ["https://dev-swid.vercel.app", "http://localhost:5173"];
+    const origin = req.headers.origin;
+    if (allowedOrigins.includes(origin)) {
+        res.header("Access-Control-Allow-Origin", origin);
+    }
+    res.header("Access-Control-Allow-Credentials", "true");
+    res.header(
+        "Access-Control-Allow-Headers",
+        "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+    );
+    next();
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/api", routes);
