@@ -11,9 +11,10 @@ const authenticate = require("../middlewares/authMiddleware");
 const upload = require("../middlewares/upload");
 
 router.get("/", getStories);
+router.get("/approved", getApprovedStories);
 router.get("/:id", getStoryById);
 
-router.post("/", upload.single("file"), authenticate, createStory);
+router.post("/", upload.single("file"), createStory);
 router.patch("/:id/status", authenticate, updateStatus);
 router.delete("/:id", authenticate, deleteStory);
 
