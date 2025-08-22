@@ -17,9 +17,12 @@ app.use(
     cors({
         origin: ["https://dev-swid.vercel.app", "http://localhost:5173"],
         methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-        credentials: true,
+        allowedHeaders: ["Content-Type", "Authorization"],
     })
 );
+
+// Handle OPTIONS (preflight request)
+app.options("*", cors());
 
 // Body parser
 app.use(express.json());
