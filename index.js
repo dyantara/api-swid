@@ -12,14 +12,18 @@ const port = process.env.PORT || 3000;
 // Koneksi database
 connectDB();
 
-// Middleware CORS
-app.use(
-    cors({
-        origin: ["https://dev-swid.vercel.app", "http://localhost:5173"],
-        methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-        credentials: true,
-    })
-);
+// Konfigurasi CORS
+const corsOptions = {
+    origin: ["https://dev-swid.vercel.app", "http://localhost:5173"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    credentials: true,
+};
+
+// Middleware CORS global
+app.use(cors(corsOptions));
+
+// Tambahin biar preflight OPTIONS selalu dijawab
+app.options("*", cors(corsOptions));
 
 // Body parser
 app.use(express.json());
