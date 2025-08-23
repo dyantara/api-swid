@@ -7,23 +7,23 @@ const connectDB = require("./config/db");
 
 dotenv.config();
 const app = express();
-const port = process.env.PORT || 3000;
 
 // Koneksi database
 connectDB();
 
 app.use(express.json());
 
+// CORS setup
 app.use(
     cors({
-        origin: "*",
+        origin: ["https://dev-swid.vercel.app", "http://localhost:5173"],
         methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         credentials: true,
     })
 );
 
 // Routes
-app.use("/api/v1/", routes);
+app.use("/api/v1", routes);
 
 // 404 handler
 app.use((req, res, next) => {
@@ -35,5 +35,4 @@ app.use((req, res, next) => {
 // Error handler
 app.use(errorHandler);
 
-// Start server
-app.listen(port, () => console.log(`🚀 Server running at http://localhost:${port}`));
+module.exports = app; // 👉 jangan pakai app.listen()
