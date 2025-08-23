@@ -12,24 +12,18 @@ const port = process.env.PORT || 3000;
 // Koneksi database
 connectDB();
 
-// Middleware CORS
+app.use(express.json());
+
 app.use(
     cors({
-        origin: ["https://dev-swid.vercel.app", "http://localhost:5173"],
+        origin: "*",
         methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-        allowedHeaders: ["Content-Type", "Authorization"],
+        credentials: true,
     })
 );
 
-// Handle OPTIONS (preflight request)
-app.options("*", cors());
-
-// Body parser
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
 // Routes
-app.use("/api", routes);
+app.use("/api/v1/", routes);
 
 // 404 handler
 app.use((req, res, next) => {
