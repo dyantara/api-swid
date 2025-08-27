@@ -1,6 +1,11 @@
 const jwt = require("jsonwebtoken");
 
 const authenticate = (req, res, next) => {
+    // ✅ Skip preflight
+    if (req.method === "OPTIONS") {
+        return next();
+    }
+
     const authHeader = req.headers.authorization;
 
     if (!authHeader?.startsWith("Bearer ")) {
