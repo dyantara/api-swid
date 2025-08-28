@@ -16,7 +16,7 @@ app.use(express.json());
 // CORS setup
 app.use(
     cors({
-        origin: ["https://dev-swid.vercel.app", "http://localhost:5173"],
+        origin: "*",
         methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     })
 );
