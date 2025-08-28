@@ -1,5 +1,4 @@
-// config/db.js
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const connectDB = async () => {
     try {
@@ -7,8 +6,8 @@ const connectDB = async () => {
         console.log("✅ Connected to MongoDB Atlas");
     } catch (error) {
         console.error("❌ MongoDB connection error:", error.message);
-        process.exit(1); // Keluar dari app kalau gagal connect
+        process.exit(1);
     }
 };
 
-module.exports = connectDB;
+export default connectDB;
