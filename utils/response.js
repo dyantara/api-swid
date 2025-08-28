@@ -1,16 +1,23 @@
 // utils/response.js
-exports.successResponse = (res, message, data = {}) => {
-    return res.status(200).json({
-        success: true,
+export const success = (res, data = {}, message = "OK", statusCode = 200) => {
+    return res.status(statusCode).json({
+        status: "success",
         message,
         data,
     });
 };
 
-exports.errorResponse = (res, statusCode, message, details = null) => {
+export const fail = (res, message = "Bad request", statusCode = 400) => {
     return res.status(statusCode).json({
-        success: false,
+        status: "fail",
         message,
-        ...(details && { details }),
     });
 };
+
+export const error = (res, message = "Internal server error", statusCode = 500) => {
+    return res.status(statusCode).json({
+        status: "error",
+        message,
+    });
+};
+

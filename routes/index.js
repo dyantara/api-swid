@@ -1,14 +1,14 @@
-const express = require("express");
+import express from "express";
+import authRoutes from "./authRoutes.js";
+import userRoutes from "./userRoutes.js";
+import storyRoutes from "./storyRoutes.js";
+import categoryRoutes from "./categoryRoutes.js";
+
 const router = express.Router();
 
-// Import semua sub-routes
-const storyRoutes = require("./storyRoutes");
-const categoryRoutes = require("./categoryRoutes");
-const userRoutes = require("./userRoutes");
-
-// Gunakan sub-routes
+router.use("/auth", authRoutes);
+router.use("/users", userRoutes);
 router.use("/stories", storyRoutes);
 router.use("/categories", categoryRoutes);
-router.use("/users", userRoutes);
 
-module.exports = router;
+export default router;

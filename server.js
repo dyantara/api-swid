@@ -1,9 +1,9 @@
-const express = require("express");
-const dotenv = require("dotenv");
-const cors = require("cors");
-const errorHandler = require("./middlewares/errorHandler");
-const routes = require("./routes");
-const connectDB = require("./config/db");
+import express from "express";
+import dotenv from "dotenv";
+import cors from "cors";
+import errorHandler from "./middlewares/errorHandler.js";
+import routes from "./routes/index.js"; // pastikan ada index.js
+import connectDB from "./config/db.js"; // ✅ sudah cocok
 
 dotenv.config();
 const app = express();
@@ -34,4 +34,4 @@ app.use((req, res, next) => {
 // Error handler
 app.use(errorHandler);
 
-module.exports = app; // 👉 jangan pakai app.listen()
+export default app; // 👉 jangan pakai app.listen()

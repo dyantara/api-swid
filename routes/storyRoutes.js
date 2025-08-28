@@ -1,25 +1,27 @@
-const express = require("express");
-const router = express.Router();
-const {
+// routes/storyRoutes.js
+import express from "express";
+import {
     createStory,
     getStories,
     updateStatus,
     getStoryById,
     deleteStory,
     getApprovedStories,
-} = require("../controllers/storyController");
+} from "../controllers/storyController.js";
+import  requireRole  from "../middlewares/roleMiddleware.js";
+import upload from "../middlewares/upload.js";
+import protect from "../middlewares/authMiddleware.js";
 
-const authenticate = require("../middlewares/authMiddleware");
-const upload = require("../middlewares/upload");
+const router = express.Router();
 
-// PUBLIC
+// Public
 router.get("/", getStories);
 router.get("/approved", getApprovedStories);
 router.get("/:id", getStoryById);
 
-// PRIVATE
-router.post("/", authenticate, upload.single("file"), createStory);
-router.patch("/:id/status", authenticate, updateStatus);
-router.delete("/:id", authenticate, deleteStory);
+// Private
+router.post("/", protect, upload.single("file"), createStory);
+router.patch("/:id/status", protect, requireRole(["admin"]), updateStatus);
+router.delete("/:id", protect, requireRole(["admin"]), deleteStory);
 
-module.exports = router;
+export default router;
