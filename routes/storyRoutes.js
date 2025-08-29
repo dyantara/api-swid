@@ -24,4 +24,9 @@ router.post("/", protect, upload.single("file"), createStory);
 router.patch("/:id/status", protect, requireRole(["admin"]), updateStatus);
 router.delete("/:id", protect, requireRole(["admin"]), deleteStory);
 
+router.get("/ping", (req, res) => {
+    res.json({ message: "pong" });
+});
+
+
 export default router;
