@@ -1,27 +1,51 @@
-const Category = require("../models/Category");
+import { Category } from "../models/Category.js";
+import { success } from "../utils/response.js";
 
-exports.getCategories = async (req, res, next) => {
+// GET: ambil semua kategori
+export const getCategories = async (req, res, next) => {
     try {
         const categories = await Category.find().sort({ name: 1 });
-        res.status(200).json({
-            message: "Kategori berhasil diambil.",
-            count: categories.length,
-            data: categories,
-        });
+        return success(
+            res,
+            {
+                count: categories.length,
+                categories,
+            },
+            "Kategori berhasil diambil."
+        );
     } catch (err) {
-        next({ status: 500, message: "Gagal mengambil kategori", error: err });
+        next(err); // biarkan middleware errorHandler yang handle
     }
 };
 
-exports.createCategory = async (req, res, next) => {
+// POST: buat kategori baru
+export const createCategory = async (req, res, next) => {
     try {
-        const category = new Category(req.body);
+        const { name, description } = req.body;
+
+        // ✅ validasi input
+        if (!name || name.trim() === "") {
+            return res.status(400).json({
+                success: false,
+                message: "Nama kategori wajib diisi.",
+            });
+        }
+
+        // ✅ cek kategori duplikat
+        const existing = await Category.findOne({ name });
+        if (existing) {
+            return res.status(409).json({
+                success: false,
+                message: "Kategori dengan nama ini sudah ada.",
+            });
+        }
+
+        // ✅ simpan kategori baru
+        const category = new Category({ name, description });
         const saved = await category.save();
-        res.status(201).json({
-            message: "Kategori berhasil dibuat.",
-            data: saved,
-        });
+
+        return success(res, saved, "Kategori berhasil dibuat.");
     } catch (err) {
-        next({ status: 400, message: "Gagal membuat kategori", error: err });
+        next(err);
     }
 };

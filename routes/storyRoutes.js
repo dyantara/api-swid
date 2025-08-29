@@ -1,26 +1,32 @@
-const express = require("express");
-const router = express.Router();
-
-// Pastikan import-nya sesuai dengan export di controller
-const {
+// routes/storyRoutes.js
+import express from "express";
+import {
     createStory,
     getStories,
     updateStatus,
     getStoryById,
     deleteStory,
-} = require("../controllers/storyController");
+    getApprovedStories,
+} from "../controllers/storyController.js";
+import  requireRole  from "../middlewares/roleMiddleware.js";
+import upload from "../middlewares/upload.js";
+import protect from "../middlewares/authMiddleware.js";
 
-// Pastikan middleware ini ada dan benar isinya
-const authenticate = require("../middlewares/authMiddleware");
-const upload = require("../middlewares/upload");
+const router = express.Router();
 
-// Route publik (misalnya lihat semua cerita)
+// Public
 router.get("/", getStories);
+router.get("/approved", getApprovedStories);
 router.get("/:id", getStoryById);
 
-// Route yang butuh autentikasi
-router.post("/", upload.single("file"), authenticate, createStory);
-router.patch("/:id/status", authenticate, updateStatus);
-router.delete("/:id", authenticate, deleteStory);
+// Private
+router.post("/", protect, upload.single("file"), createStory);
+router.patch("/:id/status", protect, requireRole(["admin"]), updateStatus);
+router.delete("/:id", protect, requireRole(["admin"]), deleteStory);
 
-module.exports = router;
+router.get("/ping", (req, res) => {
+    res.json({ message: "pong" });
+});
+
+
+export default router;

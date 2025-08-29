@@ -1,41 +1,33 @@
-const Story = require("../models/Story");
-const imagekit = require("../utils/imagekit");
+import {Story} from "../models/Story.js";
+import imagekit from "../utils/imagekit.js";
+import { success, fail, error } from "../utils/response.js";
 
-exports.createStory = async (req, res, next) => {
+
+// Create new story
+export const createStory = async (req, res) => {
     try {
-        const { title, content, category, isAnonymous, email, submittedBy } = req.body;
-
+        const { title, content, category, isAnonymous } = req.body;
         const file = req.file;
 
-        if (!file) {
-            return next({
-                status: 400,
-                message: "Gambar wajib diunggah.",
-            });
-        }
+        if (!file) return fail(res, "Gambar wajib diunggah.", 400);
 
         const mimeType = file.mimetype;
         const allowedImageTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
-
         if (!allowedImageTypes.includes(mimeType)) {
-            return next({
-                status: 400,
-                message: `Format gambar '${mimeType}' tidak didukung. Gunakan jpg, jpeg, png, atau webp.`,
-            });
+            return fail(
+                res,
+                `Format gambar '${mimeType}' tidak didukung. Gunakan jpg, jpeg, png, atau webp.`,
+                400
+            );
         }
 
         const maxSize = 1 * 1024 * 1024; // 1MB
         if (file.size > maxSize) {
-            return next({
-                status: 400,
-                message: "Ukuran gambar terlalu besar. Maksimal 1MB.",
-            });
+            return fail(res, "Ukuran gambar terlalu besar. Maksimal 1MB.", 400);
         }
 
-        // Ubah buffer jadi base64 string
+        // Ubah buffer ke base64
         const base64File = `data:${mimeType};base64,${file.buffer.toString("base64")}`;
-
-        // Nama file otomatis
         const extension = mimeType.split("/")[1];
         const autoFileName = `story-${Date.now()}.${extension}`;
 
@@ -48,49 +40,33 @@ exports.createStory = async (req, res, next) => {
                 folder: "story-images",
             });
 
-            if (!uploadResponse || !uploadResponse.url) {
-                return next({
-                    status: 500,
-                    message: "Gagal mendapatkan URL gambar dari ImageKit.",
-                });
-            }
-
+            if (!uploadResponse?.url)
+                return error(res, "Gagal mendapatkan URL gambar dari ImageKit.");
             imageUrl = uploadResponse.url;
         } catch (uploadErr) {
-            return next({
-                status: 500,
-                message: "Gagal upload gambar ke ImageKit.",
-                error: uploadErr.message,
-            });
+            return error(res, "Gagal upload gambar ke ImageKit: " + uploadErr.message, 500);
         }
 
-        // Simpan ke database
+        // Buat story baru
         const story = new Story({
             title,
             content,
             category,
             isAnonymous,
-            email,
-            submittedBy,
+            submittedBy: req.user.userId, // ✅ dari token
             image: imageUrl,
+            status: "pending",
         });
 
         const saved = await story.save();
-
-        res.status(201).json({
-            message: "Cerita berhasil dikirim. Terima kasih sudah berbagi 💛",
-            data: saved,
-        });
+        return success(res, saved, "Cerita berhasil dikirim. Terima kasih sudah berbagi 💛", 201);
     } catch (err) {
-        next({
-            status: 400,
-            message: "Gagal mengirim cerita.",
-            error: err.message,
-        });
+        return error(res, "Gagal mengirim cerita: " + err.message, 400);
     }
 };
 
-exports.getStories = async (req, res, next) => {
+// Get all stories (filter by status/category)
+export const getStories = async (req, res) => {
     try {
         const filter = {};
         if (req.query.status) filter.status = req.query.status;
@@ -99,50 +75,36 @@ exports.getStories = async (req, res, next) => {
         const stories = await Story.find(filter)
             .sort({ submittedAt: -1 })
             .populate("category", "name")
-            .populate("submittedBy", "name");
+            .populate("submittedBy", "name email");
 
-        res.json({
-            message: "Cerita berhasil diambil",
-            count: stories.length,
-            data: stories,
-        });
+        return success(res, stories, "Cerita berhasil diambil");
     } catch (err) {
-        next({ status: 500, message: "Gagal mengambil cerita", error: err.message });
+        return error(res, "Gagal mengambil cerita: " + err.message);
     }
 };
 
-exports.getStoryById = async (req, res, next) => {
+// Get story by ID
+export const getStoryById = async (req, res) => {
     try {
         const story = await Story.findById(req.params.id)
             .populate("category", "name")
-            .populate("submittedBy", "name");
+            .populate("submittedBy", "name email");
 
-        if (!story) {
-            return next({ status: 404, message: "Cerita tidak ditemukan" });
-        }
+        if (!story) return fail(res, "Cerita tidak ditemukan", 404);
 
-        res.json({
-            message: "Detail cerita berhasil diambil",
-            data: story,
-        });
+        return success(res, story, "Detail cerita berhasil diambil");
     } catch (err) {
-        next({
-            status: 500,
-            message: "Gagal mengambil detail cerita",
-            error: err.message,
-        });
+        return error(res, "Gagal mengambil detail cerita: " + err.message);
     }
 };
 
-exports.updateStatus = async (req, res, next) => {
+// Update status (pending/approved/rejected)
+export const updateStatus = async (req, res) => {
     const { status } = req.body;
-    const validStatuses = ["approved", "rejected"];
+    const validStatuses = ["pending", "approved", "rejected"];
 
     if (!validStatuses.includes(status)) {
-        return next({
-            status: 400,
-            message: "Status tidak valid. Harus 'approved' atau 'rejected'.",
-        });
+        return fail(res, "Status tidak valid. Harus 'pending', 'approved', atau 'rejected'.", 400);
     }
 
     try {
@@ -155,39 +117,36 @@ exports.updateStatus = async (req, res, next) => {
             { new: true }
         );
 
-        if (!story) {
-            return next({ status: 404, message: "Cerita tidak ditemukan" });
-        }
+        if (!story) return fail(res, "Cerita tidak ditemukan", 404);
 
-        res.json({
-            message: `Status cerita berhasil diubah menjadi '${status}'.`,
-            data: story,
-        });
+        return success(res, story, `Status cerita berhasil diubah menjadi '${status}'.`);
     } catch (err) {
-        next({
-            status: 500,
-            message: "Gagal mengubah status cerita",
-            error: err.message,
-        });
+        return error(res, "Gagal mengubah status cerita: " + err.message);
     }
 };
 
-exports.deleteStory = async (req, res, next) => {
+// Delete story
+export const deleteStory = async (req, res) => {
     try {
         const story = await Story.findByIdAndDelete(req.params.id);
+        if (!story) return fail(res, "Cerita tidak ditemukan", 404);
 
-        if (!story) {
-            return next({ status: 404, message: "Cerita tidak ditemukan" });
-        }
-
-        res.json({
-            message: "Cerita berhasil dihapus",
-        });
+        return success(res, null, "Cerita berhasil dihapus");
     } catch (err) {
-        next({
-            status: 500,
-            message: "Gagal menghapus cerita",
-            error: err.message,
-        });
+        return error(res, "Gagal menghapus cerita: " + err.message);
+    }
+};
+
+// Get only approved stories
+export const getApprovedStories = async (req, res) => {
+    try {
+        const stories = await Story.find({ status: "approved" })
+            .sort({ approvedAt: -1 })
+            .populate("category", "name")
+            .populate("submittedBy", "name email");
+
+        return success(res, stories, "Cerita berhasil diambil");
+    } catch (err) {
+        return error(res, "Gagal mengambil cerita: " + err.message);
     }
 };
