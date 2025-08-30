@@ -4,9 +4,9 @@ import {
     createStory,
     getStories,
     updateStatus,
-    getStoryById,
     deleteStory,
     getApprovedStories,
+    getStoryBySlug,
 } from "../controllers/storyController.js";
 import  requireRole  from "../middlewares/roleMiddleware.js";
 import upload from "../middlewares/upload.js";
@@ -17,10 +17,10 @@ const router = express.Router();
 // Public
 router.get("/", getStories);
 router.get("/approved", getApprovedStories);
-router.get("/:id", getStoryById);
+router.post("/", upload.single("file"), createStory);
+router.get("/:slug", getStoryBySlug);
 
 // Private
-router.post("/", protect, upload.single("file"), createStory);
 router.patch("/:id/status", protect, requireRole(["admin"]), updateStatus);
 router.delete("/:id", protect, requireRole(["admin"]), deleteStory);
 

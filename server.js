@@ -2,10 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import connectDB from "./config/db.js";
-import authRoutes from "./routes/authRoutes.js";
-import userRoutes from "./routes/userRoutes.js";
-import storyRoutes from "./routes/storyRoutes.js";
-import categoryRoutes from "./routes/categoryRoutes.js";
+import router from "./routes/index.js";
 
 dotenv.config();
 const app = express();
@@ -15,16 +12,15 @@ app.use(express.json());
 // CORS setup
 app.use(
     cors({
-        origin: "*",
+        origin: "http://localhost:5173", // frontend kamu
         methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         credentials: true,
     })
 );
 
+
 // Routes
-app.use("/api/v1/users", userRoutes);
-app.use("/api/v1/stories", storyRoutes);
-app.use("/api/v1/categories", categoryRoutes);
+app.use("/api/v1", router);
 
 // Koneksi database
 connectDB();
