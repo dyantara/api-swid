@@ -30,6 +30,10 @@ const storySchema = new mongoose.Schema(
             type: Date,
             default: Date.now,
         },
+        slug: {
+            type: String,
+            unique: true,
+        },
         approvedAt: Date,
         isAnonymous: {
             type: Boolean,

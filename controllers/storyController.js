@@ -47,16 +47,23 @@ export const createStory = async (req, res) => {
             return error(res, "Gagal upload gambar ke ImageKit: " + uploadErr.message, 500);
         }
 
-        // Buat story baru
+        const slug = title
+            .toLowerCase()
+            .replace(/[^a-z0-9\s-]/g, "")
+            .trim()
+            .replace(/\s+/g, "-");
+
         const story = new Story({
             title,
             content,
             category,
             isAnonymous,
-            submittedBy: req.user.userId, // ✅ dari token
+            submittedBy: req.user ? req.user.userId : null,
             image: imageUrl,
             status: "pending",
+            slug, // tambahkan slug
         });
+
 
         const saved = await story.save();
         return success(res, saved, "Cerita berhasil dikirim. Terima kasih sudah berbagi 💛", 201);
@@ -148,5 +155,20 @@ export const getApprovedStories = async (req, res) => {
         return success(res, stories, "Cerita berhasil diambil");
     } catch (err) {
         return error(res, "Gagal mengambil cerita: " + err.message);
+    }
+};
+
+// Get story by slug
+export const getStoryBySlug = async (req, res) => {
+    try {
+        const story = await Story.findOne({ slug: req.params.slug })
+            .populate("category", "name")
+            .populate("submittedBy", "name email");
+
+        if (!story) return fail(res, "Cerita tidak ditemukan", 404);
+
+        return success(res, story, "Detail cerita berhasil diambil");
+    } catch (err) {
+        return error(res, "Gagal mengambil detail cerita: " + err.message);
     }
 };
