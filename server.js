@@ -12,12 +12,11 @@ app.use(express.json());
 // CORS setup
 app.use(
     cors({
-        origin: "http://localhost:5173", // frontend kamu
+        origin: ["http://localhost:5173", "https://swid.vercel.app"],
         methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         credentials: true,
     })
 );
-
 
 // Routes
 app.use("/api/v1", router);
@@ -30,5 +29,5 @@ const port = process.env.PORT;
 
 // server
 app.listen(port, () => {
-	console.log(`Server is running on port http://localhost:${port}`);
+    console.log(`Server is running on port http://localhost:${port}`);
 });
